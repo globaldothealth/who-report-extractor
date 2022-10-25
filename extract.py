@@ -1,7 +1,10 @@
+import os
 import io
 import csv
 import logging
 import datetime
+import tempfile
+import subprocess
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -9,6 +12,7 @@ from collections import defaultdict
 
 
 import pycountry
+import requests
 
 COUNTRIES = [country.name for country in pycountry.countries]
 COUNTRY_START_TOKENS = [c.split()[0] for c in COUNTRIES] + [
@@ -131,12 +135,41 @@ def next_state(st: ParserState) -> ParserState:
 
 
 class Parser:
-    def __init__(self, file: Path):
-        self.file = file
-        self.lines = file.read_text().splitlines()
+
+    url = None
+    file = None
+
+    def __init__(self, file: Path = None, url: str = None):
+        if url:
+            self.url = url
+            self.file = self.convert_to_text(self.download(url))
+        elif file:
+            if file.suffix == ".pdf":
+                self.file = self.convert_to_text(file)
+            else:
+                self.file = file
+        else:
+            raise ValueError("At least one of file or url is required")
+        self.lines = self.file.read_text().splitlines()
         self.state = ParserState.PROLOGUE
         self.in_prologue = True
         self.data = [defaultdict(str)]
+
+    def download(self, url: str) -> Path:
+        res = requests.get(url)
+        if res.status_code != 200:
+            raise ConnectionError(res.text)
+        buf = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+        buf.write(res.content)
+        return Path(buf.name)
+
+    def convert_to_text(self, file: Path) -> Path:
+        result = subprocess.run(["pdftotext", "-nopgbrk", str(file)])
+        if result.returncode != 0:
+            raise Exception(f"pdftotext failed on {file}")
+        text_path = file.with_name(file.stem + ".txt")
+        assert text_path.exists()
+        return text_path
 
     def parse_line(self, line: str) -> str:
         line = line.strip()
@@ -214,4 +247,6 @@ class Parser:
 
 
 if __name__ == "__main__":
-    print(Parser(Path("OEW42-1016102022.txt")).to_csv())
+    if (WHO_REPORT := os.getenv("WHO_REPORT")) is None:
+        raise ValueError("Specify url in WHO_REPORT environment variable")
+    print(Parser(url=os.getenv("WHO_REPORT")).to_csv())
