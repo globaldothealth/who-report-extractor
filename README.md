@@ -1,5 +1,5 @@
 # who-report-extractor
-Extracts information from WHO briefing report PDFs
+Extracts information from AFRO WHO briefing report PDFs
 
 
 ## Setup
