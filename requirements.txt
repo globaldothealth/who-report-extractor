@@ -1,0 +1,2 @@
+pycountry==20.7.3
+requests
