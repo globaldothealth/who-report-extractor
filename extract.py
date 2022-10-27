@@ -139,17 +139,16 @@ class Parser:
     url = None
     file = None
 
-    def __init__(self, file: Path = None, url: str = None):
-        if url:
-            self.url = url
-            self.file = self.convert_to_text(self.download(url))
-        elif file:
-            if file.suffix == ".pdf":
-                self.file = self.convert_to_text(file)
-            else:
-                self.file = file
+    def __init__(self, report: str = None):
+        if "http" in report:
+            self.url = report
+            self.file = self.convert_to_text(self.download(report))
         else:
-            raise ValueError("At least one of file or url is required")
+            report = Path(report)
+            if report.suffix == ".pdf":
+                self.file = self.convert_to_text(report)
+            else:
+                self.file = report
         self.lines = self.file.read_text().splitlines()
         self.state = ParserState.PROLOGUE
         self.in_prologue = True
@@ -249,4 +248,4 @@ class Parser:
 if __name__ == "__main__":
     if (WHO_REPORT := os.getenv("WHO_REPORT")) is None:
         raise ValueError("Specify url in WHO_REPORT environment variable")
-    print(Parser(url=os.getenv("WHO_REPORT")).to_csv())
+    print(Parser(os.getenv("WHO_REPORT")).to_csv())
