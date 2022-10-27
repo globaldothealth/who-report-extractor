@@ -1,3 +1,13 @@
+"""
+Extracts information from Outbreaks and Emergencies Bulletins from WHO
+AFRO:
+
+https://www.afro.who.int/health-topics/disease-outbreaks/outbreaks-and-other-emergencies-updates?page=0
+
+This script is only tested for reports published from 2020 onwards, it will not
+work for reports before that date
+"""
+
 import os
 import io
 import csv
