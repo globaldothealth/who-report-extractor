@@ -1,5 +1,5 @@
 # who-report-extractor
-Extracts information from AFRO WHO briefing report PDFs
+Extracts information from Outbreaks and Emergencies Bulletins from WHO AFRO: https://www.afro.who.int/health-topics/disease-outbreaks/outbreaks-and-other-emergencies-updates?page=0
 
 
 ## Setup
