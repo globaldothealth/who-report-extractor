@@ -19,6 +19,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 from collections import defaultdict
+from contextlib import suppress
 
 
 import pycountry
@@ -103,18 +104,23 @@ INTEGER_FIELDS = ["CASES_TOTAL", "CASES_CONFIRMED", "DEATHS"]
 
 def convert_date(s: str) -> Optional[datetime.date]:
     s = s.strip()
-    try:
+    if s in ["n/a", "-"]:
+        return None
+    with suppress(ValueError):
         return datetime.datetime.strptime(s, "%d-%b-%y").date().isoformat()
+    with suppress(ValueError):
+        return datetime.datetime.strptime(s, "%d-%b-%Y").date().isoformat()
+    with suppress(ValueError):
+        return datetime.datetime.strptime(s, "%d-%B-%Y").date().isoformat()
+    try:
+        return datetime.datetime.strptime(s, "%d-%B-%f").date().isoformat()
     except ValueError:
-        try:
-            return datetime.datetime.strptime(s, "%d-%b-%Y").date().isoformat()
-        except ValueError:
-            logging.error("Could not parse date %s", s)
-            return None
+        logging.error("Could not parse date %s", s)
+        return None
 
 
 def convert_int(s: str) -> Optional[int]:
-    s = s.strip().replace(" ", "")
+    s = s.strip().replace(" ", "").replace(",", "")
     if s == "-" or s == "":
         return None
     try:
@@ -187,7 +193,7 @@ class Parser:
             return ""
         if self.state == ParserState.END:
             return ""
-        if line.startswith(BEGIN_TEXT) or line == "Country":
+        if line.startswith(BEGIN_TEXT):
             self.state = ParserState.HEADER
             self.in_prologue = False
             return ""
